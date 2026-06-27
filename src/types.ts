@@ -20,5 +20,15 @@ export interface PortRow {
   occupant?: PortOccupant
 }
 
-/** Browse mode: common = common tool default ports, full = the whole 0–65535 range. */
-export type BrowseMode = 'common' | 'full'
+/** Status axis of the filter: all ports, only occupied, or only free. */
+export type StatusFilter = 'all' | 'used' | 'free'
+
+/** The active view filter, applied on top of the full 0–65535 range. */
+export interface FilterState {
+  /** Only show common tool default ports (rows with a label). */
+  commonOnly: boolean
+  /** Filter by occupancy state. */
+  status: StatusFilter
+  /** Hide privileged ports below 1024. */
+  hidePrivileged: boolean
+}

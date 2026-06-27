@@ -1,12 +1,12 @@
-import type { BrowseMode, PortRow } from '../types.ts'
+import type { FilterState, PortRow, StatusFilter } from '../types.ts'
 import { Box, Text, useApp, useInput, useStdout } from 'ink'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getCmd } from '../data/enrich.ts'
 import { getOccupancy } from '../data/occupancy.ts'
-import { buildCommonRows, buildFullRows } from '../ports/rows.ts'
+import { applyFilters, buildRows, PRIVILEGED_PORT } from '../ports/rows.ts'
 
 interface AppProps {
-  mode: BrowseMode
+  initialFilter: FilterState
   refreshMs: number
   initialPort?: number
 }
@@ -14,15 +14,18 @@ interface AppProps {
 const MAX_PORT = 65535
 
 /** Rows reserved for the banner / thead / footer chrome. */
-const CHROME_ROWS = 8
+const CHROME_ROWS = 9
 
 /** Fixed column widths (the Name column uses flexGrow to fill the rest). */
 const COL_MARKER = 2
 const COL_PORT = 7
 const COL_STATUS = 9
 
-/** Privileged port boundary: ports below this need root and are discouraged. */
-const PRIVILEGED_PORT = 1024
+/** How long the "port hidden by filter" notice stays on screen. */
+const NOTICE_MS = 2000
+
+/** Status filter cycle order for the `s` key. */
+const STATUS_CYCLE: StatusFilter[] = ['all', 'used', 'free']
 
 type RowColor = 'red' | 'cyan' | 'gray'
 
@@ -40,11 +43,12 @@ function getRowColor(row: PortRow): RowColor {
   return 'gray'
 }
 
-export function App({ mode, refreshMs, initialPort }: AppProps) {
+export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
   const { exit } = useApp()
   const { stdout } = useStdout()
 
   const [rows, setRows] = useState<PortRow[]>([])
+  const [filter, setFilter] = useState<FilterState>(initialFilter)
   const [cursor, setCursor] = useState(0)
   const [loading, setLoading] = useState(true)
   const [occupiedCount, setOccupiedCount] = useState(0)
@@ -52,10 +56,15 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
   const [cmd, setCmd] = useState('')
   // goto prompt: null = inactive, otherwise the digits typed so far
   const [gotoInput, setGotoInput] = useState<string | null>(null)
+  // transient notice shown when goto targets a filtered-out port
+  const [gotoNotice, setGotoNotice] = useState<string | null>(null)
   const didInitGoto = useRef(false)
 
   const width = stdout.columns ?? 80
   const viewport = Math.max(5, (stdout.rows ?? 24) - CHROME_ROWS)
+
+  // Apply the active view filter on top of the full row set.
+  const visibleRows = useMemo(() => applyFilters(rows, filter), [rows, filter])
 
   // Periodically refresh the whole occupancy snapshot (like htop) so the
   // red/green state never goes stale.
@@ -65,8 +74,7 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
     async function refresh() {
       const occupancy = await getOccupancy()
       if (!active) return
-      const next = mode === 'full' ? buildFullRows(occupancy) : buildCommonRows(occupancy)
-      setRows(next)
+      setRows(buildRows(occupancy))
       setOccupiedCount(occupancy.size)
       setUpdatedAt(new Date())
       setLoading(false)
@@ -78,11 +86,23 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
       active = false
       clearInterval(timer)
     }
-  }, [mode, refreshMs])
+  }, [refreshMs])
+
+  // Keep the cursor within the (possibly shrinking) visible row set.
+  useEffect(() => {
+    setCursor(c => Math.min(c, Math.max(0, visibleRows.length - 1)))
+  }, [visibleRows.length])
+
+  // Auto-dismiss the goto notice after a short delay.
+  useEffect(() => {
+    if (gotoNotice === null) return
+    const timer = setTimeout(() => setGotoNotice(null), NOTICE_MS)
+    return () => clearTimeout(timer)
+  }, [gotoNotice])
 
   // When an occupied port is focused, lazy-load its full cmd in the background
   // (200ms debounce, cached per pid).
-  const selected = rows[cursor]
+  const selected = visibleRows[cursor]
   const selectedPid = selected?.occupant?.pid
   useEffect(() => {
     setCmd('')
@@ -100,13 +120,19 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
     }
   }, [selectedPid])
 
-  // Move the cursor to a given port number (no-op if it isn't in the current mode).
+  // Move the cursor to a given port, or notice if the filter hides it.
   function jumpToPort(port: number) {
-    const idx = rows.findIndex(r => r.port === port)
-    if (idx >= 0) setCursor(idx)
+    const idx = visibleRows.findIndex(r => r.port === port)
+    if (idx >= 0) {
+      setCursor(idx)
+      setGotoNotice(null)
+    }
+    else {
+      setGotoNotice(`port ${port} is hidden by the current filter`)
+    }
   }
 
-  // Jump to the port passed on the CLI once rows are first loaded (full mode).
+  // Jump to the port passed on the CLI once rows are first loaded.
   useEffect(() => {
     if (didInitGoto.current || initialPort === undefined || rows.length === 0) return
     jumpToPort(initialPort)
@@ -150,12 +176,28 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
       setGotoInput(input)
       return
     }
-    if (key.downArrow || input === 'j') setCursor(c => Math.min(rows.length - 1, c + 1))
+    // filter toggles — changing the view resets the cursor to the top
+    if (input === 'c') {
+      setFilter(f => ({ ...f, commonOnly: !f.commonOnly }))
+      setCursor(0)
+      return
+    }
+    if (input === 's') {
+      setFilter(f => ({ ...f, status: STATUS_CYCLE[(STATUS_CYCLE.indexOf(f.status) + 1) % STATUS_CYCLE.length] }))
+      setCursor(0)
+      return
+    }
+    if (input === 'p') {
+      setFilter(f => ({ ...f, hidePrivileged: !f.hidePrivileged }))
+      setCursor(0)
+      return
+    }
+    if (key.downArrow || input === 'j') setCursor(c => Math.min(visibleRows.length - 1, c + 1))
     if (key.upArrow || input === 'k') setCursor(c => Math.max(0, c - 1))
-    if (key.pageDown) setCursor(c => Math.min(rows.length - 1, c + viewport))
+    if (key.pageDown) setCursor(c => Math.min(visibleRows.length - 1, c + viewport))
     if (key.pageUp) setCursor(c => Math.max(0, c - viewport))
     if (input === 'g') setCursor(0)
-    if (input === 'G') setCursor(Math.max(0, rows.length - 1))
+    if (input === 'G') setCursor(Math.max(0, visibleRows.length - 1))
   })
 
   if (loading) {
@@ -169,9 +211,17 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
 
   // Virtual scrolling: keep the cursor centered and slice out only the visible rows.
   const half = Math.floor(viewport / 2)
-  const maxStart = Math.max(0, rows.length - viewport)
+  const maxStart = Math.max(0, visibleRows.length - viewport)
   const start = Math.max(0, Math.min(cursor - half, maxStart))
-  const windowRows = rows.slice(start, start + viewport)
+  const windowRows = visibleRows.slice(start, start + viewport)
+
+  // Active-filter chips for the banner.
+  const chips: string[] = []
+  if (filter.commonOnly) chips.push('common')
+  if (filter.status !== 'all') chips.push(filter.status)
+  if (filter.hidePrivileged) chips.push('no-priv')
+
+  const position = visibleRows.length === 0 ? '0/0' : `${cursor + 1}/${visibleRows.length}`
 
   return (
     <Box flexDirection="column" width={width}>
@@ -179,9 +229,10 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
       <Box width="100%" justifyContent="space-between" marginBottom={1}>
         <Text color="cyanBright" bold>portux</Text>
         <Text dimColor>
-          {mode === 'full' ? 'Full range 0–65535' : 'Common tool default ports'}
+          {'0–65535'}
+          {chips.map(c => ` · ${c}`).join('')}
           {` · ${occupiedCount} in use`}
-          {` · ${cursor + 1}/${rows.length}`}
+          {` · ${position}`}
           {updatedAt ? ` · updated ${updatedAt.toLocaleTimeString()}` : ''}
         </Text>
       </Box>
@@ -197,9 +248,11 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
 
       {/* tbody */}
       <Box flexDirection="column">
-        {windowRows.map((row, i) => (
-          <Row key={row.port} row={row} selected={start + i === cursor} />
-        ))}
+        {visibleRows.length === 0
+          ? <Text dimColor>No ports match the current filter</Text>
+          : windowRows.map((row, i) => (
+              <Row key={row.port} row={row} selected={start + i === cursor} />
+            ))}
       </Box>
 
       {/* footer */}
@@ -215,6 +268,7 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
         {selected?.occupant && (
           <Text dimColor>{cmd ? `cmd: ${cmd}` : 'cmd: loading…'}</Text>
         )}
+        {gotoNotice && <Text color="yellow">{gotoNotice}</Text>}
         {gotoInput !== null
           ? (
               <Text>
@@ -223,7 +277,7 @@ export function App({ mode, refreshMs, initialPort }: AppProps) {
               </Text>
             )
           : (
-              <Text dimColor>↑/↓ j/k move · PgUp/PgDn page · g/G jump · 0-9 goto · q quit</Text>
+              <Text dimColor>↑↓/jk move · PgUp/PgDn page · g/G ends · 0-9 goto · c common · s status · p &lt;1024 · q quit</Text>
             )}
       </Box>
     </Box>
