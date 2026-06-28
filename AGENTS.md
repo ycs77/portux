@@ -14,6 +14,10 @@
 ## Commands
 
 - `pnpm build`
+- `pnpm lint --fix`
+- `pnpm lint [...files] --fix`
+- `pnpm fmt`
+- `pnpm fmt [...files]`
 - `pnpm typecheck`
 
 ## Rules

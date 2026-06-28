@@ -18,7 +18,7 @@ export function buildRows(occupancy: OccupancyMap): PortRow[] {
 
 /** Apply the active view filter to the full row set (pure; trivially unit-testable). */
 export function applyFilters(rows: PortRow[], f: FilterState): PortRow[] {
-  return rows.filter((row) => {
+  return rows.filter(row => {
     if (f.commonOnly && row.label === undefined) return false
     if (f.status === 'used' && row.occupant === undefined) return false
     if (f.status === 'free' && row.occupant !== undefined) return false

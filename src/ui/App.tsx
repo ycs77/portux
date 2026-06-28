@@ -80,7 +80,7 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
       setLoading(false)
     }
 
-    refresh()
+    void refresh()
     const timer = setInterval(refresh, refreshMs)
     return () => {
       active = false
@@ -126,8 +126,7 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
     if (idx >= 0) {
       setCursor(idx)
       setGotoNotice(null)
-    }
-    else {
+    } else {
       setGotoNotice(`port ${port} is hidden by the current filter`)
     }
   }
@@ -152,14 +151,14 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
         return
       }
       if (key.backspace || key.delete) {
-        setGotoInput((prev) => {
+        setGotoInput(prev => {
           const next = (prev ?? '').slice(0, -1)
           return next === '' ? null : next
         })
         return
       }
       if (/^[0-9]$/.test(input)) {
-        setGotoInput((prev) => {
+        setGotoInput(prev => {
           const next = (prev ?? '') + input
           return Number(next) > MAX_PORT ? prev : next
         })
@@ -183,7 +182,10 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
       return
     }
     if (input === 's') {
-      setFilter(f => ({ ...f, status: STATUS_CYCLE[(STATUS_CYCLE.indexOf(f.status) + 1) % STATUS_CYCLE.length] }))
+      setFilter(f => ({
+        ...f,
+        status: STATUS_CYCLE[(STATUS_CYCLE.indexOf(f.status) + 1) % STATUS_CYCLE.length],
+      }))
       setCursor(0)
       return
     }
@@ -203,7 +205,9 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
   if (loading) {
     return (
       <Box flexDirection="column" padding={1}>
-        <Text color="cyanBright" bold>portux</Text>
+        <Text color="cyanBright" bold>
+          portux
+        </Text>
         <Text dimColor>Scanning ports…</Text>
       </Box>
     )
@@ -227,7 +231,9 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
     <Box flexDirection="column" width={width}>
       {/* banner: title on the left, status on the right */}
       <Box width="100%" justifyContent="space-between" marginBottom={1}>
-        <Text color="cyanBright" bold>portux</Text>
+        <Text color="cyanBright" bold>
+          portux
+        </Text>
         <Text dimColor>
           {'0–65535'}
           {chips.map(c => ` · ${c}`).join('')}
@@ -240,19 +246,27 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
       {/* thead (persistent header row) */}
       <Box width="100%">
         <Box width={COL_MARKER} />
-        <Box width={COL_PORT}><Text bold>Port</Text></Box>
-        <Box width={COL_STATUS}><Text bold>Status</Text></Box>
-        <Box flexGrow={1}><Text bold>Name</Text></Box>
+        <Box width={COL_PORT}>
+          <Text bold>Port</Text>
+        </Box>
+        <Box width={COL_STATUS}>
+          <Text bold>Status</Text>
+        </Box>
+        <Box flexGrow={1}>
+          <Text bold>Name</Text>
+        </Box>
       </Box>
       <Text dimColor>{'─'.repeat(width)}</Text>
 
       {/* tbody */}
       <Box flexDirection="column">
-        {visibleRows.length === 0
-          ? <Text dimColor>No ports match the current filter</Text>
-          : windowRows.map((row, i) => (
-              <Row key={row.port} row={row} selected={start + i === cursor} />
-            ))}
+        {visibleRows.length === 0 ? (
+          <Text dimColor>No ports match the current filter</Text>
+        ) : (
+          windowRows.map((row, i) => (
+            <Row key={row.port} row={row} selected={start + i === cursor} />
+          ))
+        )}
       </Box>
 
       {/* footer */}
@@ -265,20 +279,19 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
               : ' · free — available'}
           </Text>
         )}
-        {selected?.occupant && (
-          <Text dimColor>{cmd ? `cmd: ${cmd}` : 'cmd: loading…'}</Text>
-        )}
+        {selected?.occupant && <Text dimColor>{cmd ? `cmd: ${cmd}` : 'cmd: loading…'}</Text>}
         {gotoNotice && <Text color="yellow">{gotoNotice}</Text>}
-        {gotoInput !== null
-          ? (
-              <Text>
-                <Text color="cyanBright">{`goto port: ${gotoInput}▏`}</Text>
-                <Text dimColor>  ↵ jump · esc cancel</Text>
-              </Text>
-            )
-          : (
-              <Text dimColor>↑↓/jk move · PgUp/PgDn page · g/G ends · 0-9 goto · c common · s status · p &lt;1024 · q quit</Text>
-            )}
+        {gotoInput !== null ? (
+          <Text>
+            <Text color="cyanBright">{`goto port: ${gotoInput}▏`}</Text>
+            <Text dimColor> ↵ jump · esc cancel</Text>
+          </Text>
+        ) : (
+          <Text dimColor>
+            ↑↓/jk move · PgUp/PgDn page · g/G ends · 0-9 goto · c common · s status · p &lt;1024 · q
+            quit
+          </Text>
+        )}
       </Box>
     </Box>
   )
@@ -292,23 +305,29 @@ interface RowProps {
 function Row({ row, selected }: RowProps) {
   const color = getRowColor(row)
   const status = row.occupant ? '● used' : '○ free'
-  const name = row.occupant
-    ? row.occupant.name || `pid ${row.occupant.pid}`
-    : row.label ?? ''
+  const name = row.occupant ? row.occupant.name || `pid ${row.occupant.pid}` : (row.label ?? '')
 
   return (
     <Box width="100%">
       <Box width={COL_MARKER}>
-        <Text color={color} bold={selected}>{selected ? '❯' : ' '}</Text>
+        <Text color={color} bold={selected}>
+          {selected ? '❯' : ' '}
+        </Text>
       </Box>
       <Box width={COL_PORT}>
-        <Text color={color} bold={selected}>{String(row.port)}</Text>
+        <Text color={color} bold={selected}>
+          {String(row.port)}
+        </Text>
       </Box>
       <Box width={COL_STATUS}>
-        <Text color={color} bold={selected}>{status}</Text>
+        <Text color={color} bold={selected}>
+          {status}
+        </Text>
       </Box>
       <Box flexGrow={1}>
-        <Text color={color} bold={selected} wrap="truncate-end">{name}</Text>
+        <Text color={color} bold={selected} wrap="truncate-end">
+          {name}
+        </Text>
       </Box>
     </Box>
   )
