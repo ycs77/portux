@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/portux"><img src="https://img.shields.io/npm/v/portux?style=flat-square" alt="NPM version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-brightgreen?style=flat-square" alt="Software License"></a>
+  <a href="https://github.com/ycs77/portux/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/ycs77/portux/ci.yml?branch=main&label=tests&style=flat-square" alt="GitHub Tests Action Status"></a>
   <a href="https://www.npmjs.com/package/portux"><img src="https://img.shields.io/npm/dt/portux?style=flat-square" alt="Total Downloads"></a>
 </p>
 
