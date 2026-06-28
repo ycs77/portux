@@ -1,4 +1,4 @@
-import type { FilterState, OccupancyMap, PortRow } from '../types.ts'
+import type { FilterState, OccupancyMap, PortRow, RowColor } from '../types.ts'
 import { WELL_KNOWN_PORTS } from './well-known.ts'
 
 const MAX_PORT = 65535
@@ -25,4 +25,18 @@ export function applyFilters(rows: PortRow[], f: FilterState): PortRow[] {
     if (f.hidePrivileged && row.port < PRIVILEGED_PORT) return false
     return true
   })
+}
+
+/**
+ * Decide each row's color by priority: occupied > common preset > <1024 > free.
+ * - occupied → red (cannot use)
+ * - common preset port (has a label) → cyan (worth grabbing)
+ * - <1024 → red (privileged, needs root)
+ * - otherwise free → gray
+ */
+export function getRowColor(row: PortRow): RowColor {
+  if (row.occupant) return 'red'
+  if (row.label) return 'cyan'
+  if (row.port < PRIVILEGED_PORT) return 'red'
+  return 'gray'
 }

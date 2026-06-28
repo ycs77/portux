@@ -20,6 +20,9 @@ export interface PortRow {
   occupant?: PortOccupant
 }
 
+/** UI row color used by `getRowColor` */
+export type RowColor = 'red' | 'cyan' | 'gray'
+
 /** Status axis of the filter: all ports, only occupied, or only free. */
 export type StatusFilter = 'all' | 'used' | 'free'
 

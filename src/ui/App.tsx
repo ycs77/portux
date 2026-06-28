@@ -3,7 +3,7 @@ import { Box, Text, useApp, useInput, useStdout } from 'ink'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getCmd } from '../data/enrich.ts'
 import { getOccupancy } from '../data/occupancy.ts'
-import { applyFilters, buildRows, PRIVILEGED_PORT } from '../ports/rows.ts'
+import { applyFilters, buildRows, getRowColor } from '../ports/rows.ts'
 
 interface AppProps {
   initialFilter: FilterState
@@ -26,22 +26,6 @@ const NOTICE_MS = 2000
 
 /** Status filter cycle order for the `s` key. */
 const STATUS_CYCLE: StatusFilter[] = ['all', 'used', 'free']
-
-type RowColor = 'red' | 'cyan' | 'gray'
-
-/**
- * Decide each row's color by priority: occupied > common preset > <1024 > free.
- * - occupied → red (cannot use)
- * - common preset port (has a label) → cyan (worth grabbing)
- * - <1024 → red (privileged, needs root)
- * - otherwise free → gray
- */
-function getRowColor(row: PortRow): RowColor {
-  if (row.occupant) return 'red'
-  if (row.label) return 'cyan'
-  if (row.port < PRIVILEGED_PORT) return 'red'
-  return 'gray'
-}
 
 export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
   const { exit } = useApp()

@@ -19,6 +19,7 @@
 - `pnpm fmt`
 - `pnpm fmt [...files]`
 - `pnpm typecheck`
+- `pnpm test` (watch) / `pnpm test --run` (once)
 
 ## Rules
 
@@ -37,3 +38,4 @@
 - `node-netstat` on Windows runs `netstat -a -n -o` (no `-b`), so it returns PID only, never the process name. Names must be joined in separately via `ps-list` (`Map<pid, name>`).
 - `ps-list` does not return `cmd` on Windows (typed "Not supported on Windows", empty in practice). Full `cmd` must come from `find-process`, invoked only on focus.
 - `find-process` reverse-lookup costs ~1.8s per pid (spawns WMIC internally). Never use it for batch name lookups; single focused `cmd` fetch only.
+- `enrich.ts` holds a module-level `cmdCache` that persists across tests; `vi.clearAllMocks()` does not reset it. In tests, isolate cases with a distinct pid each, and use one shared pid only when asserting the cache (call count stays 1).
