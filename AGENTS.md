@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> For product rationale, design trade-offs, and decision history, read `BACKGROUND.md`.
+
 ## Keep This File Strict
 
 - Do not add repo tours, architecture summaries, or file inventories.
