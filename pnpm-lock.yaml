@@ -36,6 +36,9 @@ importers:
       '@types/react':
         specifier: ^19.2.17
         version: 19.2.17
+      actionspack:
+        specifier: ^0.1.5
+        version: 0.1.5
       bumpp:
         specifier: ^11.1.0
         version: 11.1.0
@@ -62,6 +65,14 @@ importers:
         version: 4.1.9(@types/node@26.0.1)(vite@8.1.0(@types/node@26.0.1)(jiti@2.7.0)(yaml@2.9.0))
 
 packages:
+
+  '@actions/expressions@0.3.58':
+    resolution: {integrity: sha512-akOPmhjI/a4TRArNR0nQqfsE+5/xNvhZWOKbT8QkHCEsoLC19L/uCZfxhjyvWLLh17tGG4jjdo5RHCvkfQBdNA==}
+    engines: {node: '>= 20'}
+
+  '@actions/workflow-parser@0.3.58':
+    resolution: {integrity: sha512-79TeA1xsu15E0Enzbt6QZCxTztF3sSdj0/QsA8aC6OHt3dVdnXWRymgkHRQu5sOGyEPCsBAg6uO5jdVP6wVKdA==}
+    engines: {node: '>= 20'}
 
   '@alcalzone/ansi-tokenize@0.3.0':
     resolution: {integrity: sha512-p+CMKJ93HFmLkjXKlXiVGlMQEuRb6H0MokBSwUsX+S6BRX8eV5naFZpQJFfJHjRZY0Hmnqy1/r6UWl3x+19zYA==}
@@ -550,6 +561,11 @@ packages:
   '@vitest/utils@4.1.9':
     resolution: {integrity: sha512-A51o8ymO5PpqlWNnBP9ZHPXDIpuMtTLlGSjN7la4US+LJzoUMyhwjA5QXlm39JexgwHKW4Xjs8Z2d3dLCXOeuA==}
 
+  actionspack@0.1.5:
+    resolution: {integrity: sha512-iREZRxgkghUOKNVeQhO5r7/u+Vn482/yJbfIvpaULgls9SERLtzWKGHV4IAJz2PKkwrNx1TPi0SPqEdb/OGeVA==}
+    engines: {node: '>=22.18.0'}
+    hasBin: true
+
   ansi-escapes@7.3.0:
     resolution: {integrity: sha512-BvU8nYgGQBxcmMuEeUEmNTvrMVjJNSH7RgW24vXexN4Ven6qCvy4TntnvlnwnMLTVlcRQQdbRY8NKnaIoeWDNg==}
     engines: {node: '>=18'}
@@ -642,6 +658,10 @@ packages:
   convert-to-spaces@2.0.1:
     resolution: {integrity: sha512-rcQ1bsQO9799wq24uE5AM2tAILy4gXGIK/njFWcVQkGNZ96edlpY+A7bjwvzjYvLDyzmG1MmMLZhpcsb+klNMQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  cronstrue@2.59.0:
+    resolution: {integrity: sha512-YKGmAy84hKH+hHIIER07VCAHf9u0Ldelx1uU6EBxsRPDXIA1m5fsKmJfyC3xBhw6cVC/1i83VdbL4PvepTrt8A==}
+    hasBin: true
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
@@ -1224,6 +1244,14 @@ packages:
 
 snapshots:
 
+  '@actions/expressions@0.3.58': {}
+
+  '@actions/workflow-parser@0.3.58':
+    dependencies:
+      '@actions/expressions': 0.3.58
+      cronstrue: 2.59.0
+      yaml: 2.9.0
+
   '@alcalzone/ansi-tokenize@0.3.0':
     dependencies:
       ansi-styles: 6.2.3
@@ -1548,6 +1576,13 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
+  actionspack@0.1.5:
+    dependencies:
+      '@actions/expressions': 0.3.58
+      '@actions/workflow-parser': 0.3.58
+      cac: 7.0.0
+      yaml: 2.9.0
+
   ansi-escapes@7.3.0:
     dependencies:
       environment: 1.1.0
@@ -1625,6 +1660,8 @@ snapshots:
   convert-source-map@2.0.0: {}
 
   convert-to-spaces@2.0.1: {}
+
+  cronstrue@2.59.0: {}
 
   csstype@3.2.3: {}
 
