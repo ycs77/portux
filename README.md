@@ -27,6 +27,7 @@ portux is an interactive TUI dashboard for your ports. Instead of grepping `nets
 - Browse every port like window-shopping, no range to set up
 - See what's taken at a glance, with the process that owns it
 - Jump to any port and filter the view live, all from the keyboard
+- Grab a random free port — press `r`, or `--random` for scripts
 
 ## Getting Started
 
@@ -52,6 +53,9 @@ npx portux --used
 
 # Only the well-known default ports (3000, 5173, 8080…)
 npx portux --common
+
+# Print one random free, non-common port and exit (scriptable)
+PORT=$(npx portux --random)
 ```
 
 ## CLI
@@ -60,16 +64,17 @@ npx portux --common
 portux [port] [options]
 ```
 
-| Argument / Option | What it does                                         |
-| ----------------- | ---------------------------------------------------- |
-| `[port]`          | Open straight on this port (goto)                    |
-| `--common`        | Only show common tool default ports                  |
-| `--used`          | Only show occupied ports                             |
-| `--free`          | Only show free ports                                 |
-| `--no-privileged` | Hide privileged ports below `1024`                   |
-| `--refresh <ms>`  | Occupancy snapshot refresh interval (default `3000`) |
+| Argument / Option | What it does                                              |
+| ----------------- | --------------------------------------------------------- |
+| `[port]`          | Open straight on this port (goto)                         |
+| `--common`        | Only show common tool default ports                       |
+| `--used`          | Only show occupied ports                                  |
+| `--free`          | Only show free ports                                      |
+| `--no-privileged` | Hide privileged ports below `1024`                        |
+| `--random`        | Print one random free, non-common port (`≥1024`) and exit |
+| `--refresh <ms>`  | Occupancy snapshot refresh interval (default `3000`)      |
 
-> portux needs an interactive terminal (TTY) to run.
+> portux needs an interactive terminal (TTY) to run — except `--random`, which prints to stdout and works in scripts and pipes.
 
 ## Keys
 
@@ -79,6 +84,7 @@ portux [port] [options]
 | `PgUp` `PgDn`     | Jump a full page                                  |
 | `g` / `G`         | Jump to first / last row                          |
 | `0`–`9`           | Start a goto prompt; `Enter` jumps, `esc` cancels |
+| `r`               | Jump to a random free, non-common port            |
 | `c`               | Toggle common-only                                |
 | `s`               | Cycle status: all → used → free                   |
 | `p`               | Toggle hiding privileged ports `<1024`            |

@@ -3,7 +3,7 @@ import { Box, Text, useApp, useInput, useStdout } from 'ink'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getCmd } from '../data/enrich.ts'
 import { getOccupancy } from '../data/occupancy.ts'
-import { applyFilters, buildRows, getRowColor } from '../ports/rows.ts'
+import { applyFilters, buildRows, getRowColor, pickRandomPort } from '../ports/rows.ts'
 
 interface AppProps {
   initialFilter: FilterState
@@ -159,6 +159,16 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
       setGotoInput(input)
       return
     }
+    // jump to a random free, non-common port within the current view
+    if (input === 'r') {
+      const port = pickRandomPort(visibleRows)
+      if (port === undefined) {
+        setGotoNotice('no free port available in the current view')
+      } else {
+        jumpToPort(port)
+      }
+      return
+    }
     // filter toggles — changing the view resets the cursor to the top
     if (input === 'c') {
       setFilter(f => ({ ...f, commonOnly: !f.commonOnly }))
@@ -272,8 +282,8 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
           </Text>
         ) : (
           <Text dimColor>
-            ↑↓/jk move · PgUp/PgDn page · g/G ends · 0-9 goto · c common · s status · p &lt;1024 · q
-            quit
+            ↑↓/jk move · PgUp/PgDn page · g/G ends · 0-9 goto · r random · c common · s status · p
+            &lt;1024 · q quit
           </Text>
         )}
       </Box>

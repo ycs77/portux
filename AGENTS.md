@@ -32,6 +32,8 @@
 - Process `name` is filled once at startup via `ps-list`; only the heavier enrichment (`cmd`, user, cwd) is lazy-loaded on cursor focus. Do not move `name` into the lazy path.
 - Switching any filter (`c`/`s`/`p`) resets the cursor to the top of the list.
 - `goto` to a port hidden by the current filter must not change the filter or jump; only show a brief (~2s) footer hint.
+- Random candidate pool is exactly `occupant === undefined && label === undefined && port >= 1024`; the TUI `r` key and the `--random` CLI flag share this pool (`pickRandomPort`).
+- `r` (random jump) behaves like `goto`: it must not reset the cursor or change the filter. It picks only among currently visible rows; an empty pool shows the brief (~2s) footer notice instead of jumping.
 - Port row color follows a strict priority: occupied (red) > known default with label (cyan) > `<1024` privileged (red) > otherwise free (gray).
 - Do not mix Ink with neo-blessed terminal state management; one interface, one library (currently Ink).
 
@@ -41,6 +43,7 @@
 - `node-netstat` on Windows runs `netstat -a -n -o` (no `-b`), so it returns PID only, never the process name. Names must be joined in separately via `ps-list` (`Map<pid, name>`).
 - `ps-list` does not return `cmd` on Windows (typed "Not supported on Windows", empty in practice). Full `cmd` must come from `find-process`, invoked only on focus.
 - `find-process` reverse-lookup costs ~1.8s per pid (spawns WMIC internally). Never use it for batch name lookups; single focused `cmd` fetch only.
+- `--random` is a non-TTY output path: it must branch before the `process.stdout.isTTY` guard, print one port to stdout, and exit. It ignores all view filters (`--common`/`--used`/`--free`/`--no-privileged`) and the `[port]` argument.
 
 ## Testing
 

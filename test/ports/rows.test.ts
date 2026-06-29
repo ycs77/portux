@@ -1,6 +1,6 @@
 import type { FilterState, OccupancyMap, PortRow } from '../../src/types.ts'
 import { describe, it, expect } from 'vitest'
-import { applyFilters, buildRows, getRowColor } from '../../src/ports/rows.ts'
+import { applyFilters, buildRows, getRowColor, pickRandomPort } from '../../src/ports/rows.ts'
 
 const rows: PortRow[] = [
   { port: 80, label: 'HTTP', occupant: { pid: 111, name: 'node' } },
@@ -104,6 +104,37 @@ describe('buildRows', () => {
     const result = buildRows(occupancy)
     expect(result[0].port).toBe(0)
     expect(result[65535].port).toBe(65535)
+  })
+})
+
+describe('pickRandomPort', () => {
+  it('excludes occupied ports from the pool', () => {
+    const pool: PortRow[] = [{ port: 4000, occupant: { pid: 1, name: 'x' } }, { port: 5000 }]
+    expect(pickRandomPort(pool, () => 0)).toBe(5000)
+  })
+
+  it('excludes well-known labeled ports from the pool', () => {
+    const pool: PortRow[] = [{ port: 3000, label: 'React / Next.js dev server' }, { port: 5000 }]
+    expect(pickRandomPort(pool, () => 0)).toBe(5000)
+  })
+
+  it('excludes privileged ports below 1024', () => {
+    const pool: PortRow[] = [{ port: 22 }, { port: 5000 }]
+    expect(pickRandomPort(pool, () => 0)).toBe(5000)
+  })
+
+  it('returns a port drawn from the eligible pool', () => {
+    const pool: PortRow[] = [{ port: 4000 }, { port: 5000 }, { port: 9999 }]
+    expect(pickRandomPort(pool, () => 0.99)).toBe(9999)
+  })
+
+  it('returns undefined when no eligible port exists', () => {
+    const pool: PortRow[] = [
+      { port: 80, label: 'HTTP' },
+      { port: 22 },
+      { port: 5000, occupant: { pid: 1, name: 'x' } },
+    ]
+    expect(pickRandomPort(pool, () => 0)).toBeUndefined()
   })
 })
 

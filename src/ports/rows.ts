@@ -27,6 +27,21 @@ export function applyFilters(rows: PortRow[], f: FilterState): PortRow[] {
   })
 }
 
+/** Eligible random pool: free, no well-known label, and >= 1024. */
+export function isRandomCandidate(row: PortRow): boolean {
+  return row.occupant === undefined && row.label === undefined && row.port >= PRIVILEGED_PORT
+}
+
+/** Pick a random eligible free port; undefined when the pool is empty. rng injectable for tests. */
+export function pickRandomPort(
+  rows: PortRow[],
+  rng: () => number = Math.random,
+): number | undefined {
+  const pool = rows.filter(isRandomCandidate)
+  if (pool.length === 0) return undefined
+  return pool[Math.floor(rng() * pool.length)].port
+}
+
 /**
  * Decide each row's color by priority: occupied > common preset > <1024 > free.
  * - occupied → red (cannot use)

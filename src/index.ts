@@ -3,6 +3,8 @@ import { cac } from 'cac'
 import { render } from 'ink'
 import { createElement } from 'react'
 import pkg from '../package.json' with { type: 'json' }
+import { getOccupancy } from './data/occupancy.ts'
+import { buildRows, pickRandomPort } from './ports/rows.ts'
 import { App } from './ui/App.tsx'
 
 const DEFAULT_REFRESH_MS = 3000
@@ -13,6 +15,7 @@ interface CliOptions {
   common?: boolean
   used?: boolean
   free?: boolean
+  random?: boolean
   /** cac negated flag: defaults to true, becomes false when --no-privileged is passed. */
   privileged?: boolean
 }
@@ -29,6 +32,7 @@ cli
   .option('--used', 'Only show occupied ports')
   .option('--free', 'Only show free ports')
   .option('--no-privileged', 'Hide privileged ports below 1024')
+  .option('--random', 'Print one random free, non-common port (>=1024) and exit')
   .action((port: string | undefined, options: CliOptions) => start(options, port))
 
 cli.help()
@@ -40,6 +44,12 @@ function start(options: CliOptions, portArg?: string) {
   if (options.used && options.free) {
     console.error('Options --used and --free are mutually exclusive.')
     process.exit(1)
+  }
+
+  // Non-TTY output path: print a port and exit before the interactive TTY guard.
+  if (options.random) {
+    void printRandomPort()
+    return
   }
 
   let initialPort: number | undefined
@@ -66,4 +76,15 @@ function start(options: CliOptions, portArg?: string) {
   }
 
   render(createElement(App, { initialFilter, refreshMs, initialPort }))
+}
+
+// Print a single random free, non-common port (>=1024) to stdout, ignoring view filters.
+async function printRandomPort() {
+  const occupancy = await getOccupancy()
+  const port = pickRandomPort(buildRows(occupancy))
+  if (port === undefined) {
+    console.error('No free port available.')
+    process.exit(1)
+  }
+  console.log(port)
 }
