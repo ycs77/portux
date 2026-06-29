@@ -1,6 +1,6 @@
 {
   "name": "portux",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A TUI dashboard CLI to browse ports, spot what's occupied, and pick a free one with ease.",
   "keywords": [
     "cli",
