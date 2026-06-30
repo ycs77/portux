@@ -27,7 +27,7 @@ portux is an interactive TUI dashboard for your ports. Instead of grepping `nets
 - Browse every port like window-shopping, no range to set up
 - See what's taken at a glance, with the process that owns it
 - Jump to any port and filter the view live, all from the keyboard
-- Grab a random free port — press `r`, or `--random` for scripts
+- Grab a random free port
 
 ## Getting Started
 
