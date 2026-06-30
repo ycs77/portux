@@ -23,7 +23,7 @@ describe('filter toggles', () => {
     await press(r, 'c')
 
     await expect.poll(() => banner(r.lastFrame())).toContain('common')
-    await expect.poll(() => cursorPort(r.lastFrame())).toBe(25)
+    await expect.poll(() => cursorPort(r.lastFrame())).toBe(20)
     // Free common ports render their well-known label; the occupied 3000 prefers
     // its occupant name (`node`) in the Name column, so its label never shows.
     await vi.waitFor(() => {
@@ -94,13 +94,13 @@ describe('filter toggles', () => {
     await press(r, KEY.down)
     await expect.poll(() => cursorPort(r.lastFrame())).toBe(2)
     await press(r, 'c')
-    await expect.poll(() => cursorPort(r.lastFrame())).toBe(25)
+    await expect.poll(() => cursorPort(r.lastFrame())).toBe(20)
 
     // Move off the top again, then toggle a second filter: cursor resets once more.
     // commonOnly is still on, so the used+common view's first row is 3000.
     await press(r, KEY.down)
     await press(r, KEY.down)
-    await expect.poll(() => cursorPort(r.lastFrame())).not.toBe(25)
+    await expect.poll(() => cursorPort(r.lastFrame())).not.toBe(20)
     await press(r, 's')
     await expect.poll(() => cursorPort(r.lastFrame())).toBe(3000)
     r.unmount()
