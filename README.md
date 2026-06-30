@@ -15,6 +15,10 @@
   <a href="https://www.npmjs.com/package/portux"><img src="https://img.shields.io/npm/dt/portux?style=flat-square" alt="Total Downloads"></a>
 </p>
 
+<p align="center">
+  <img src="./screenshot.jpg" width="600" alt="portux screenshot" />
+</p>
+
 ---
 
 ## Overview
