@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { FilterState, PortRow, StatusFilter } from '../types.ts'
 import { Box, Text, useApp, useInput, useStdout } from 'ink'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -36,7 +37,6 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
   const [cursor, setCursor] = useState(0)
   const [loading, setLoading] = useState(true)
   const [occupiedCount, setOccupiedCount] = useState(0)
-  const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [cmd, setCmd] = useState('')
   // goto prompt: null = inactive, otherwise the digits typed so far
   const [gotoInput, setGotoInput] = useState<string | null>(null)
@@ -60,7 +60,6 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
       if (!active) return
       setRows(buildRows(occupancy))
       setOccupiedCount(occupancy.size)
-      setUpdatedAt(new Date())
       setLoading(false)
     }
 
@@ -213,13 +212,28 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
   const start = Math.max(0, Math.min(cursor - half, maxStart))
   const windowRows = visibleRows.slice(start, start + viewport)
 
-  // Active-filter chips for the banner.
-  const chips: string[] = []
-  if (filter.commonOnly) chips.push('common')
-  if (filter.status !== 'all') chips.push(filter.status)
-  if (filter.hidePrivileged) chips.push('no-priv')
-
   const position = visibleRows.length === 0 ? '0/0' : `${cursor + 1}/${visibleRows.length}`
+
+  // Right-aligned status segments, joined with ` · ` below.
+  const statusSegments = [
+    filter.commonOnly && (
+      <Text key="common" color="cyan">
+        common
+      </Text>
+    ),
+    filter.status !== 'all' && (
+      <Text key="status" color={filter.status === 'used' ? 'red' : 'green'}>
+        {filter.status}
+      </Text>
+    ),
+    filter.hidePrivileged && (
+      <Text key="no-priv" color="yellow">
+        no-priv
+      </Text>
+    ),
+    `${occupiedCount} in use`,
+    position,
+  ].filter(Boolean) as ReactNode[]
 
   return (
     <Box flexDirection="column" width={width}>
@@ -228,13 +242,7 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
         <Text color="cyanBright" bold>
           portux
         </Text>
-        <Text dimColor>
-          {'0–65535'}
-          {chips.map(c => ` · ${c}`).join('')}
-          {` · ${occupiedCount} in use`}
-          {` · ${position}`}
-          {updatedAt ? ` · updated ${updatedAt.toLocaleTimeString()}` : ''}
-        </Text>
+        <Text dimColor>{statusSegments.flatMap((seg, i) => (i === 0 ? [seg] : [' · ', seg]))}</Text>
       </Box>
 
       {/* thead (persistent header row) */}
@@ -266,19 +274,23 @@ export function App({ initialFilter, refreshMs, initialPort }: AppProps) {
       {/* footer */}
       <Box flexDirection="column" marginTop={1}>
         {selected && (
-          <Text>
-            {`Port ${selected.port}`}
-            {selected.occupant
-              ? ` · PID ${selected.occupant.pid} · ${selected.occupant.name || '(protected system process)'}`
-              : ' · free — available'}
-          </Text>
+          <Box width="100%" justifyContent="space-between">
+            <Text wrap="truncate-end">
+              {`Port ${selected.port}`}
+              {selected.occupant
+                ? ` · PID ${selected.occupant.pid} · ${selected.occupant.name || '(protected system process)'}`
+                : ' · free — available'}
+              {selected.occupant && (
+                <Text dimColor>{cmd ? ` · cmd: ${cmd}` : ' · cmd: loading…'}</Text>
+              )}
+            </Text>
+            {gotoNotice && <Text color="yellow">{gotoNotice}</Text>}
+          </Box>
         )}
-        {selected?.occupant && <Text dimColor>{cmd ? `cmd: ${cmd}` : 'cmd: loading…'}</Text>}
-        {gotoNotice && <Text color="yellow">{gotoNotice}</Text>}
         {gotoInput !== null ? (
           <Text>
             <Text color="cyanBright">{`goto port: ${gotoInput}▏`}</Text>
-            <Text dimColor> ↵ jump · esc cancel</Text>
+            <Text dimColor> Enter jump · esc cancel</Text>
           </Text>
         ) : (
           <Text dimColor>
