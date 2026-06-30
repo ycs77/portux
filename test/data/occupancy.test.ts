@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 interface NetstatItem {
   state: string
@@ -37,10 +37,6 @@ function ssUnavailable() {
       cb(Object.assign(new Error('spawn ss ENOENT'), { code: 'ENOENT' }))
     },
   )
-}
-
-function setPlatform(platform: NodeJS.Platform) {
-  Object.defineProperty(process, 'platform', { value: platform, configurable: true })
 }
 
 function netstatEmits(items: NetstatItem[]) {
@@ -95,7 +91,7 @@ describe('parseLsofOutput', () => {
   })
 })
 
-describe('getOccupancy on Linux via ss', () => {
+describe.runIf(process.platform === 'linux')('getOccupancy on Linux via ss', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -175,16 +171,9 @@ describe('getOccupancy falls back to netstat when ss is unavailable', () => {
   })
 })
 
-describe('getOccupancy on macOS via lsof', () => {
-  const realPlatform = process.platform
-
+describe.runIf(process.platform === 'darwin')('getOccupancy on macOS via lsof', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    setPlatform('darwin')
-  })
-
-  afterEach(() => {
-    setPlatform(realPlatform)
   })
 
   it('reads listening ports from lsof on macOS', async () => {
